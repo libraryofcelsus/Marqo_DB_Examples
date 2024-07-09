@@ -450,8 +450,6 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                 print(f"\nCombined search results:\n{external_search}\n")
                 
                 
-                
-           # <task> Create DB Pruner
             pruner = []
             pruner.append({'role': 'system', 'content': 
                 """You are a database entry pruner. Your task is to analyze individual database entries and remove those that are completely irrelevant to the user's question. Do not combine or mix information from different entries. Keep relevant entries intact and in their original format."""})
@@ -471,7 +469,9 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                 4. Remove entries that are completely irrelevant.
                 5. Do not modify or combine entries - keep them in their original format.
                 6. Include the [- Entry] markers for each kept entry.
-                7. If unsure about relevance, keep the entry.
+                7. Separate each entry by a linebreak.
+                8. If unsure about relevance, keep the entry.
+                9. Repeat the entirety of the entry, do not cut it short.
 
                 OUTPUT:
                 Provide only the pruned list of relevant entries, each in its original format. Do not add any explanations or ask any questions."""})
@@ -495,7 +495,7 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                 
  
             new_prompt = f"You are {bot_name}.  Your task is to answer the user, {username}'s input using the provided context for factual verification.  If the needed information isn't contained in the provided context, only print: INFORMATION NOT FOUND IN DATABASE.  Only provide the user with an answer if the information is contained in the context window, do not use latent knowledge to answer any inquiry. Assume all data not provided by the context window is outdated and incorrect." 
-            user_prompt_1 = f"Here is your context window for factual verification, use any information contained inside over latent knowledge.\nCONTEXT WINDOW: [{external_search}]"
+            user_prompt_1 = f"Here is your context window for factual verification, use any information contained inside over latent knowledge.\nCONTEXT WINDOW: [{external_search}\n{pruned_entries}]"
             assistant_prompt_1 = f"Thank you for providing the context window, please now provide the conversation with the user."
             assistant_prompt_2 = f"Thank you for providing the context window, please now provide {username}'s current message."
 
@@ -512,6 +512,8 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                 conversation.append({'role': 'system', 'content': f"{end_prompt}"})
             conversation.append({'role': 'assistant', 'content': f"{assistant_prompt_2}"})    
             conversation.append({'role': 'user', 'content': f"CURRENT USER INQUIRY TO ANSWER: {user_input}"})
+            conversation.append({'role': 'assistant', 'content': f"Based on the provided context window, here is my answer: "})
+
             if API == "OpenAi":
                 final_response = await LLM_API_Call(API, backend_model, conversation, username, bot_name)
             if API == "Oobabooga":
