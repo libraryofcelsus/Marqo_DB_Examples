@@ -1,4 +1,4 @@
-# LLM Workspace
+# Marqo DB Examples
 Version 0.01 of Marqo DB Examples by [LibraryofCelsus.com](https://www.libraryofcelsus.com)  
   
 [Installation Guide](#installation-guide)  
@@ -7,6 +7,8 @@ Version 0.01 of Marqo DB Examples by [LibraryofCelsus.com](https://www.libraryof
 
 ------
 **Recent Changes**
+
+• 07/10 Added sorting by Similarity Score
 
 • 07/09 First Release, pretty basic for now.
 

@@ -16,26 +16,9 @@ import asyncio
 import aiofiles
 import aiohttp
 import base64
-from marqo.errors import MarqoWebError
-import sys
-import os
-import json
-import time
-import datetime as dt
-from datetime import datetime
-from uuid import uuid4
-import requests
-import shutil
-import importlib
-import numpy as np
-import re
-import keyboard
-import traceback
-import asyncio
-import aiofiles
-import aiohttp
-import base64
 import marqo
+from marqo.errors import MarqoWebError
+
 
 
 Debug_Output = "True"
@@ -424,7 +407,6 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                     filter_string=f"user:{user_id} AND memory_type:External_Resources",
                     search_method="TENSOR"
                 )
-                vector_hits = [hit['message'] for hit in vector_results['hits']]
 
                 # Lexical search
                 lexical_results = mq.index(f"BOT_NAME_{bot_name}").search(
@@ -433,11 +415,16 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                     filter_string=f"user:{user_id} AND memory_type:External_Resources",
                     search_method="LEXICAL"
                 )
-                lexical_hits = [hit['message'] for hit in lexical_results['hits']]
-                
+
                 # Combine Results
-                combined_hits = vector_hits + lexical_hits
-                external_search = remove_duplicate_dicts(combined_hits)
+                combined_hits = vector_results['hits'] + lexical_results['hits']
+
+                # Sort by similarity score in ascending order (highest score at the bottom)
+                combined_hits_sorted = sorted(combined_hits, key=lambda x: x['_score'])
+
+                # Extract messages and remove duplicates
+                combined_messages = [hit['message'] for hit in combined_hits_sorted]
+                external_search = remove_duplicate_dicts(combined_messages)
                 external_search = "\n".join([f"[ - {entry}]" for entry in external_search])
 
             except Exception as e:
@@ -448,6 +435,7 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                     external_search = ""
             if Debug_Output == "True":
                 print(f"\nCombined search results:\n{external_search}\n")
+
                 
                 
             pruner = []
@@ -458,7 +446,8 @@ async def Marqo_DB_Chatbot_RAG(user_input, username, user_id, bot_name, image_pa
                 f"DATABASE ENTRIES: {external_search}"})
 
             pruner.append({'role': 'user', 'content': 
-                f"""USER QUESTION: {expanded_input}
+                f"""USER QUESTION: {user_input}
+                EXPANDED USER INPUT: {expanded_input}
 
                 TASK:
                 Prune the database entries based on relevance to the user's question. Follow these steps:
@@ -653,6 +642,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
-    
-    
